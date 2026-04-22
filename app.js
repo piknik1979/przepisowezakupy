@@ -5,12 +5,10 @@ let currentEditingRecipeId = null;
 let isSignUpMode = false;
 
 // --- 1. SYSTEM AUTH ---
-
 async function checkUser() {
     try {
         const { data: { user }, error } = await _supabase.auth.getUser();
         if (error) throw error;
-
         const authOverlay = document.getElementById('auth-container');
         const appContent = document.getElementById('app-content');
 
@@ -24,40 +22,34 @@ async function checkUser() {
             appContent.style.display = 'none';
         }
     } catch (err) {
-        console.log("Brak aktywnej sesji.");
         document.getElementById('auth-container').style.display = 'flex';
     }
 }
 
-/** Obsługa logowania i rejestracji przez formularz */
 window.handleAuthSubmit = async (event) => {
     event.preventDefault();
     const btn = document.getElementById('btn-auth-submit');
     const email = document.getElementById('auth-email').value;
     const pass = document.getElementById('auth-password').value;
-    const retypeField = document.getElementById('auth-retype');
 
     btn.disabled = true;
     btn.innerText = "Przetwarzanie...";
 
     try {
         if (isSignUpMode) {
-            const retype = retypeField.value;
+            const retype = document.getElementById('auth-retype').value;
             if (pass !== retype) throw new Error("Hasła nie są identyczne!");
-            
-            const { data, error } = await _supabase.auth.signUp({ email, password: pass });
+            const { error } = await _supabase.auth.signUp({ email, password: pass });
             if (error) throw error;
-            
-            alert("Konto utworzone! Możesz się teraz zalogować.");
+            alert("Konto utworzone! Zaloguj się.");
             toggleAuthMode(false);
         } else {
-            const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+            const { error } = await _supabase.auth.signInWithPassword({ email, password: pass });
             if (error) throw error;
             await checkUser();
         }
     } catch (err) {
-        console.error("Błąd Auth:", err);
-        alert("Błąd: " + (err.message || "Nieznany problem z logowaniem"));
+        alert("Błąd: " + err.message);
     } finally {
         btn.disabled = false;
         btn.innerText = isSignUpMode ? 'Zarejestruj mnie' : 'Zaloguj się';
@@ -65,30 +57,24 @@ window.handleAuthSubmit = async (event) => {
 };
 
 window.toggleAuthMode = (isSignUp) => {
-    isSignUpMode = isSignUp; // Aktualizacja zmiennej globalnej
+    isSignUpMode = isSignUp;
     document.getElementById('auth-title').innerText = isSignUp ? 'Rejestracja' : 'Logowanie';
     document.getElementById('retype-wrapper').style.display = isSignUp ? 'block' : 'none';
     document.getElementById('btn-auth-submit').innerText = isSignUp ? 'Zarejestruj mnie' : 'Zaloguj się';
-    
     document.getElementById('switch-area').innerHTML = isSignUp 
         ? `Masz już konto? <a href="#" onclick="toggleAuthMode(false)">Zaloguj się</a>`
         : `Nie masz konta? <a href="#" onclick="toggleAuthMode(true)">Zarejestruj się</a>`;
 };
 
-window.handleSignOut = async () => {
-    await _supabase.auth.signOut();
-    location.reload(); 
-};
-
+window.handleSignOut = async () => { await _supabase.auth.signOut(); location.reload(); };
 window.togglePasswordVisibility = (id) => {
     const el = document.getElementById(id);
     if (el) el.type = el.type === 'password' ? 'text' : 'password';
 };
 
 // --- 2. LISTA ZAKUPÓW ---
-
 async function refreshData() {
-    const { data: shopping } = await _supabase.from('shopping_list').select('*, products(name)').order('added_at', { ascending: false });
+    const { data: shopping } = await _supabase.from('shopping_list').select('*, products(name)').order('is_bought', { ascending: true });
     const { data: recipes } = await _supabase.from('recipes').select('*').order('title');
     renderShoppingList(shopping || []);
     renderRecipesMenu(recipes || []);
@@ -109,19 +95,17 @@ function renderShoppingList(list) {
 window.addItemManually = async () => {
     const name = document.getElementById('new-item-name').value;
     if (!name) return;
-    const amount = document.getElementById('new-item-amount').value;
-    const unit = document.getElementById('new-item-unit').value;
-    
     const productId = await getOrCreateProductId(name);
     const { data: { user } } = await _supabase.auth.getUser();
     
     await _supabase.from('shopping_list').insert([{ 
-        product_id: productId, amount, unit, user_id: user.id 
+        product_id: productId, 
+        amount: document.getElementById('new-item-amount').value, 
+        unit: document.getElementById('new-item-unit').value, 
+        user_id: user.id 
     }]);
     
     document.getElementById('new-item-name').value = "";
-    document.getElementById('new-item-amount').value = "";
-    document.getElementById('new-item-unit').value = "";
     refreshData();
 };
 
@@ -135,12 +119,11 @@ async function getOrCreateProductId(name) {
 }
 
 // --- 3. PRZEPISY ---
-
 function renderRecipesMenu(list) {
     document.getElementById('recipes-menu').innerHTML = list.map(r => `
-        <div class="recipe-item-row">
-            <button class="recipe-select-btn" onclick="displayRecipeCard('${r.id}')">📖 ${r.title}</button>
-            <button class="recipe-del-btn" onclick="deleteFullRecipe('${r.id}')">🗑️</button>
+        <div class="recipe-item-row" style="display:flex; justify-content:space-between; margin-bottom:10px; background:white; padding:10px; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <button class="recipe-select-btn" style="flex:1; text-align:left; border:none; background:none; font-weight:bold; cursor:pointer;" onclick="displayRecipeCard('${r.id}')">📖 ${r.title}</button>
+            <button class="recipe-del-btn" style="border:none; background:none; cursor:pointer;" onclick="deleteFullRecipe('${r.id}')">🗑️</button>
         </div>
     `).join('');
 }
@@ -167,26 +150,18 @@ window.displayRecipeCard = async (id) => {
                 <div>🍎 ${r.kcal || '--'} kcal</div>
             </div>
             <div class="card-section">
-                <div class="section-header" onclick="toggleCardSection('desc-content')">
-                    <h3>Sposób przygotowania ▼</h3>
-                </div>
-                <div id="desc-content" class="section-content" style="display:none; padding:10px; background:#f9f9f9; border-radius:10px;">
-                    <p>${r.instructions || 'Brak opisu.'}</p>
-                </div>
+                <h3>Sposób przygotowania</h3>
+                <div style="padding:10px; background:#f9f9f9; border-radius:10px; white-space: pre-wrap;">${r.instructions || 'Brak opisu.'}</div>
             </div>
             <div class="card-section">
-                <div class="section-header" onclick="toggleCardSection('ings-content')">
-                    <h3>Składniki ▼</h3>
-                </div>
-                <div id="ings-content" class="section-content">
-                    <ul class="modern-ing-list">
-                        ${ings.map(i => `
-                            <li>
-                                <label><input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
-                                ${i.products?.name} (${i.amount || ''} ${i.unit || ''})</label>
-                            </li>`).join('')}
-                    </ul>
-                </div>
+                <h3>Składniki</h3>
+                <ul class="modern-ing-list">
+                    ${ings.map(i => `
+                        <li style="display:flex; gap:10px; align-items:center;">
+                            <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
+                            <span>${i.products?.name} (${i.amount || ''} ${i.unit || ''})</span>
+                        </li>`).join('')}
+                </ul>
             </div>
             <button onclick="addSelectedToCart()" class="btn-add-to-cart">Dodaj do listy 🛒</button>
         </div>
@@ -195,19 +170,27 @@ window.displayRecipeCard = async (id) => {
 
 window.openRecipeEditor = async (id = null) => {
     currentEditingRecipeId = id;
-    const fields = ['edit-recipe-name', 'edit-recipe-prep', 'edit-recipe-bake', 'edit-recipe-servings', 'edit-recipe-kcal', 'edit-recipe-instructions', 'edit-recipe-url'];
+    const fields = {
+        'edit-recipe-name': 'title',
+        'edit-recipe-prep': 'prep_time',
+        'edit-recipe-bake': 'bake_time',
+        'edit-recipe-servings': 'servings',
+        'edit-recipe-kcal': 'kcal',
+        'edit-recipe-instructions': 'instructions',
+        'edit-recipe-url': 'url'
+    };
+
     if (id) {
+        document.getElementById('editor-header-title').innerText = "Edytuj przepis";
         const { data: r } = await _supabase.from('recipes').select('*').eq('id', id).single();
-        fields.forEach(f => {
+        Object.keys(fields).forEach(f => {
             const el = document.getElementById(f);
-            if (el) {
-                const key = f.replace('edit-recipe-', '');
-                el.value = r[key] || "";
-            }
+            if (el) el.value = r[fields[f]] || "";
         });
         loadEditorIngredients(id);
     } else {
-        fields.forEach(f => {
+        document.getElementById('editor-header-title').innerText = "Nowy przepis";
+        Object.keys(fields).forEach(f => {
             const el = document.getElementById(f);
             if (el) el.value = "";
         });
@@ -216,10 +199,22 @@ window.openRecipeEditor = async (id = null) => {
     showView('editor');
 };
 
-window.saveRecipeData = async (silent = false) => {
+async function loadEditorIngredients(rid) {
+    const { data: ings } = await _supabase.from('recipe_ingredients').select('*, products(name)').eq('recipe_id', rid);
+    document.getElementById('editor-ingredients-list').innerHTML = (ings || []).map(i => `
+        <li style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
+            <label style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" checked>
+                <span><strong>${i.products?.name}</strong> (${i.amount || ''} ${i.unit || ''})</span>
+            </label>
+            <button onclick="deleteIngFromRecipe('${i.id}')" class="del-btn">&times;</button>
+        </li>`).join('');
+}
+
+window.saveRecipeData = async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     const d = {
-        title: document.getElementById('edit-recipe-name').value || "Nowy Przepis",
+        title: document.getElementById('edit-recipe-name').value || "Bez nazwy",
         prep_time: document.getElementById('edit-recipe-prep').value,
         bake_time: document.getElementById('edit-recipe-bake').value,
         servings: document.getElementById('edit-recipe-servings').value,
@@ -233,14 +228,14 @@ window.saveRecipeData = async (silent = false) => {
         const { data } = await _supabase.from('recipes').insert([d]).select().single();
         if (data) currentEditingRecipeId = data.id;
     }
-    if (!silent) alert("Zapisano!");
+    alert("Zapisano!");
     refreshData();
 };
 
 window.addIngredientToRecipe = async () => {
     const name = document.getElementById('ing-name').value;
     if (!name) return;
-    if (!currentEditingRecipeId) await saveRecipeData(true);
+    if (!currentEditingRecipeId) await window.saveRecipeData();
     const productId = await getOrCreateProductId(name);
     await _supabase.from('recipe_ingredients').insert([{ 
         recipe_id: currentEditingRecipeId, product_id: productId, 
@@ -251,17 +246,6 @@ window.addIngredientToRecipe = async () => {
     loadEditorIngredients(currentEditingRecipeId);
 };
 
-// --- 4. FUNKCJE POMOCNICZE UI ---
-
-async function loadEditorIngredients(rid) {
-    const { data: ings } = await _supabase.from('recipe_ingredients').select('*, products(name)').eq('recipe_id', rid);
-    document.getElementById('editor-ingredients-list').innerHTML = (ings || []).map(i => `
-        <li>
-            <span>${i.products?.name} (${i.amount || ''} ${i.unit || ''})</span>
-            <button onclick="deleteIngFromRecipe('${i.id}')" class="del-btn">✕</button>
-        </li>`).join('');
-}
-
 window.addSelectedToCart = async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     const sel = document.querySelectorAll('.ing-to-buy:checked');
@@ -269,7 +253,7 @@ window.addSelectedToCart = async () => {
         product_id: cb.dataset.pid, amount: cb.dataset.amt, unit: cb.dataset.unt, user_id: user.id 
     }));
     if(items.length > 0) { 
-        await _supabase.from('shopping_list').insert(items); 
+        await _supabase.from('shopping_list').upsert(items, { onConflict: 'user_id, product_id' }); 
         alert("Dodano do listy!"); 
         refreshData(); 
         closeRecipeCard(); 
@@ -277,23 +261,15 @@ window.addSelectedToCart = async () => {
 };
 
 window.updateAutocompletes = async () => {
-    const { data: products } = await _supabase.from('products').select('name');
-    const pList = document.getElementById('products-datalist');
-    if (pList) pList.innerHTML = (products || []).map(p => `<option value="${p.name}">`).join('');
-    
+    const { data: products } = await _supabase.from('products').select('name').limit(20);
+    document.getElementById('products-datalist').innerHTML = (products || []).map(p => `<option value="${p.name}">`).join('');
     const units = ['g', 'kg', 'ml', 'l', 'szt', 'opak.', 'łyżka', 'łyżeczka', 'szklanka'];
-    const uList = document.getElementById('units-datalist');
-    if (uList) uList.innerHTML = units.map(u => `<option value="${u}">`).join('');
+    document.getElementById('units-datalist').innerHTML = units.map(u => `<option value="${u}">`).join('');
 };
 
 window.showView = (v) => {
     document.getElementById('view-main').style.display = v === 'main' ? 'block' : 'none';
     document.getElementById('view-editor').style.display = v === 'editor' ? 'block' : 'none';
-};
-
-window.toggleCardSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 };
 
 window.closeRecipeCard = () => { 
@@ -324,7 +300,8 @@ window.removeItem = async (id) => {
 };
 
 window.clearBought = async () => { 
-    await _supabase.from('shopping_list').delete().eq('is_bought', true); 
+    const { data: { user } } = await _supabase.auth.getUser();
+    await _supabase.from('shopping_list').delete().eq('user_id', user.id).eq('is_bought', true); 
     refreshData(); 
 };
 
@@ -336,5 +313,4 @@ window.clearAllShopping = async () => {
     } 
 };
 
-// Inicjalizacja
 checkUser();

@@ -15,29 +15,24 @@
         <div class="auth-box">
             <h2 id="auth-title">Logowanie</h2>
             <p id="auth-msg">Zaloguj się, aby zarządzać przepisami</p>
-
             <form id="auth-form" onsubmit="handleAuthSubmit(event)">
                 <input type="email" id="auth-email" name="email" autocomplete="username" placeholder="E-mail" required>
-
                 <div class="password-wrapper">
                     <input type="password" id="auth-password" name="password" autocomplete="current-password"
                         placeholder="Hasło" required>
                     <button type="button" class="toggle-password"
                         onclick="togglePasswordVisibility('auth-password')">👁️</button>
                 </div>
-
                 <div id="retype-wrapper" style="display: none;" class="password-wrapper">
                     <input type="password" id="auth-retype" name="retype-password" autocomplete="new-password"
                         placeholder="Powtórz hasło">
                     <button type="button" class="toggle-password"
                         onclick="togglePasswordVisibility('auth-retype')">👁️</button>
                 </div>
-
                 <div class="auth-btns">
                     <button type="submit" id="btn-auth-submit">Zaloguj się</button>
                 </div>
             </form>
-
             <div class="auth-switch">
                 <p id="switch-area">Nie masz konta? <a href="#" onclick="toggleAuthMode(true)">Zarejestruj się</a></p>
             </div>
@@ -89,7 +84,7 @@
             <div id="view-editor" style="display: none;">
                 <header class="editor-header">
                     <button onclick="showView('main')" class="back-btn">⬅ Wróć</button>
-                    <h1>Edytor</h1>
+                    <h1 id="editor-header-title">Edytor</h1>
                 </header>
                 <div class="editor-container">
                     <div class="form-section">
@@ -107,7 +102,7 @@
                     </div>
 
                     <div class="editor-ing-box">
-                        <h3>Składniki</h3>
+                        <h3>Składniki w przepisie</h3>
                         <div class="ingredient-form">
                             <input type="text" id="ing-name" list="products-datalist" placeholder="Co?">
                             <input type="text" id="ing-amount" placeholder="Ile?">
@@ -115,7 +110,6 @@
                             <button onclick="addIngredientToRecipe()">+</button>
                         </div>
                         <ul id="editor-ingredients-list"></ul>
-                        <button onclick="bulkAddToCartFromEditor()" class="bulk-add-btn">🛒 Dodaj zaznaczone</button>
                     </div>
                 </div>
             </div>
@@ -124,7 +118,6 @@
 
     <datalist id="products-datalist"></datalist>
     <datalist id="units-datalist"></datalist>
-
     <script src="app.js"></script>
 </body>
 
