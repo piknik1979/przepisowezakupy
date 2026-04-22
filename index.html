@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Recipes Pro</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="auth-container" class="auth-overlay">
+        <div class="auth-box">
+            <h2 id="auth-title">Logowanie</h2>
+            <p id="auth-msg">Zaloguj się, aby zarządzać przepisami</p>
+
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                <input type="email" id="auth-email" name="email" autocomplete="username" placeholder="E-mail" required>
+
+                <div class="password-wrapper">
+                    <input type="password" id="auth-password" name="password" autocomplete="current-password"
+                        placeholder="Hasło" required>
+                    <button type="button" class="toggle-password"
+                        onclick="togglePasswordVisibility('auth-password')">👁️</button>
+                </div>
+
+                <div id="retype-wrapper" style="display: none;" class="password-wrapper">
+                    <input type="password" id="auth-retype" name="retype-password" autocomplete="new-password"
+                        placeholder="Powtórz hasło">
+                    <button type="button" class="toggle-password"
+                        onclick="togglePasswordVisibility('auth-retype')">👁️</button>
+                </div>
+
+                <div class="auth-btns">
+                    <button type="submit" id="btn-auth-submit">Zaloguj się</button>
+                </div>
+            </form>
+
+            <div class="auth-switch">
+                <p id="switch-area">Nie masz konta? <a href="#" onclick="toggleAuthMode(true)">Zarejestruj się</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-content" style="display: none;">
+        <div id="user-bar">
+            <span id="user-email-display"></span>
+            <button onclick="handleSignOut()" class="logout-btn">Wyloguj</button>
+        </div>
+
+        <div class="app-container">
+            <div id="view-main">
+                <header>
+                    <h1>🛒 Moja Lista</h1>
+                    <div class="quick-add">
+                        <input type="text" id="new-item-name" list="products-datalist" placeholder="Produkt...">
+                        <input type="text" id="new-item-amount" placeholder="Ile" style="width: 50px;">
+                        <input type="text" id="new-item-unit" list="units-datalist" placeholder="Jedn."
+                            style="width: 70px;">
+                        <button onclick="addItemManually()">Dodaj</button>
+                    </div>
+                </header>
+
+                <main class="main-content">
+                    <section class="shopping-column">
+                        <div class="column-header">
+                            <h2>Lista zakupów</h2>
+                            <div class="btn-group">
+                                <button class="clear-btn" onclick="clearBought()">Kupione</button>
+                                <button class="clear-btn danger" onclick="clearAllShopping()">Wszystko</button>
+                            </div>
+                        </div>
+                        <ul id="shopping-list"></ul>
+                    </section>
+
+                    <aside class="recipes-column">
+                        <div class="column-header">
+                            <h2>🍲 Przepisy</h2>
+                            <button onclick="openRecipeEditor()" class="add-recipe-btn">+ Nowy</button>
+                        </div>
+                        <div id="recipes-menu"></div>
+                        <div id="active-recipe-card" style="display: none;"></div>
+                    </aside>
+                </main>
+            </div>
+
+            <div id="view-editor" style="display: none;">
+                <header class="editor-header">
+                    <button onclick="showView('main')" class="back-btn">⬅ Wróć</button>
+                    <h1>Edytor</h1>
+                </header>
+                <div class="editor-container">
+                    <div class="form-section">
+                        <input type="text" id="edit-recipe-name" class="large-input" placeholder="Nazwa dania...">
+                        <div class="extra-info-grid">
+                            <input type="text" id="edit-recipe-prep" placeholder="Przyg.">
+                            <input type="text" id="edit-recipe-bake" placeholder="Piecz.">
+                            <input type="text" id="edit-recipe-servings" placeholder="Porcje">
+                            <input type="text" id="edit-recipe-kcal" placeholder="kcal">
+                        </div>
+                        <textarea id="edit-recipe-instructions" class="large-textarea"
+                            placeholder="Instrukcja..."></textarea>
+                        <input type="text" id="edit-recipe-url" class="medium-input" placeholder="Link (opcjonalnie)">
+                        <button onclick="saveRecipeData()" class="save-btn">Zapisz ✅</button>
+                    </div>
+
+                    <div class="editor-ing-box">
+                        <h3>Składniki</h3>
+                        <div class="ingredient-form">
+                            <input type="text" id="ing-name" list="products-datalist" placeholder="Co?">
+                            <input type="text" id="ing-amount" placeholder="Ile?">
+                            <input type="text" id="ing-unit" list="units-datalist" placeholder="Jedn.">
+                            <button onclick="addIngredientToRecipe()">+</button>
+                        </div>
+                        <ul id="editor-ingredients-list"></ul>
+                        <button onclick="bulkAddToCartFromEditor()" class="bulk-add-btn">🛒 Dodaj zaznaczone</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="products-datalist"></datalist>
+    <datalist id="units-datalist"></datalist>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
