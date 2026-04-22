@@ -235,15 +235,42 @@ window.saveRecipeData = async () => {
 window.addIngredientToRecipe = async () => {
     const name = document.getElementById('ing-name').value;
     if (!name) return;
-    if (!currentEditingRecipeId) await window.saveRecipeData();
+
+    // Jeśli to nowy przepis i jeszcze nic nie zapisaliśmy, stwórzmy "szkielet" w bazie
+    if (!currentEditingRecipeId) {
+        const { data: { user } } = await _supabase.auth.getUser();
+        const initialTitle = document.getElementById('edit-recipe-name').value || "Nowy Przepis (w trakcie)";
+        
+        const { data, error } = await _supabase.from('recipes').insert([{ 
+            title: initialTitle, 
+            user_id: user.id 
+        }]).select().single();
+        
+        if (error) {
+            console.error("Błąd tworzenia szkicu:", error);
+            return;
+        }
+        currentEditingRecipeId = data.id;
+    }
+
     const productId = await getOrCreateProductId(name);
-    await _supabase.from('recipe_ingredients').insert([{ 
-        recipe_id: currentEditingRecipeId, product_id: productId, 
+    
+    // Dodajemy składnik do już istniejącego (lub właśnie stworzonego) ID przepisu
+    const { error: ingError } = await _supabase.from('recipe_ingredients').insert([{ 
+        recipe_id: currentEditingRecipeId, 
+        product_id: productId, 
         amount: document.getElementById('ing-amount').value, 
         unit: document.getElementById('ing-unit').value 
     }]);
-    document.getElementById('ing-name').value = "";
-    loadEditorIngredients(currentEditingRecipeId);
+
+    if (ingError) {
+        console.error("Błąd dodawania składnika:", ingError);
+    } else {
+        document.getElementById('ing-name').value = "";
+        document.getElementById('ing-amount').value = "";
+        document.getElementById('ing-unit').value = "";
+        loadEditorIngredients(currentEditingRecipeId);
+    }
 };
 
 window.addSelectedToCart = async () => {
