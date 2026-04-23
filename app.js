@@ -94,18 +94,20 @@ function renderShoppingList(list) {
 
 window.addItemManually = async () => {
     const name = document.getElementById('new-item-name').value;
+    const amountVal = document.getElementById('new-item-amount').value; // pobieramy wartość
     if (!name) return;
     const productId = await getOrCreateProductId(name);
     const { data: { user } } = await _supabase.auth.getUser();
     
     await _supabase.from('shopping_list').insert([{ 
         product_id: productId, 
-        amount: document.getElementById('new-item-amount').value, 
+        amount: String(amountVal), // <--- KLUCZ: Wymuszamy tekst
         unit: document.getElementById('new-item-unit').value, 
         user_id: user.id 
     }]);
     
     document.getElementById('new-item-name').value = "";
+    document.getElementById('new-item-amount').value = ""; // czyścimy pole
     refreshData();
 };
 
@@ -136,6 +138,10 @@ window.displayRecipeCard = async (id) => {
     document.getElementById('recipes-menu').style.display = 'none';
     card.style.display = 'block';
 
+    // Logika randomowego ukrywania (50% szans na schowanie na starcie)
+    const descShow = Math.random() > 0.5 ? 'block' : 'none';
+    const ingsShow = Math.random() > 0.5 ? 'block' : 'none';
+
     card.innerHTML = `
         <div class="recipe-card-modern">
             <div class="card-nav">
@@ -143,26 +149,33 @@ window.displayRecipeCard = async (id) => {
                 <button onclick="openRecipeEditor('${r.id}')" class="btn-edit-icon">✏️ Edytuj</button>
             </div>
             <h2 class="card-title">${r.title}</h2>
-            <div class="card-stats">
-                <div>⏱️ ${r.prep_time || '--'}</div>
-                <div>🔥 ${r.bake_time || '--'}</div>
-                <div>🍴 ${r.servings || '--'} os.</div>
-                <div>🍎 ${r.kcal || '--'} kcal</div>
-            </div>
+
             <div class="card-section">
-                <h3>Sposób przygotowania</h3>
-                <div style="padding:10px; background:#f9f9f9; border-radius:10px; white-space: pre-wrap;">${r.instructions || 'Brak opisu.'}</div>
+                <div class="section-header" onclick="toggleCardSection('desc-content')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Sposób przygotowania</h3>
+                    <span id="desc-content-arrow">${descShow === 'block' ? '▼' : '▶'}</span>
+                </div>
+                <div id="desc-content" class="section-content" style="display:${descShow}; padding:10px; background:#f9f9f9; border-radius:10px; white-space: pre-wrap;">
+                    ${r.instructions || 'Brak opisu.'}
+                </div>
             </div>
+
             <div class="card-section">
-                <h3>Składniki</h3>
-                <ul class="modern-ing-list">
-                    ${ings.map(i => `
-                        <li style="display:flex; gap:10px; align-items:center;">
-                            <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
-                            <span>${i.products?.name} (${i.amount || ''} ${i.unit || ''})</span>
-                        </li>`).join('')}
-                </ul>
+                <div class="section-header" onclick="toggleCardSection('ings-content')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Składniki</h3>
+                    <span id="ings-content-arrow">${ingsShow === 'block' ? '▼' : '▶'}</span>
+                </div>
+                <div id="ings-content" class="section-content" style="display:${ingsShow};">
+                    <ul class="modern-ing-list">
+                        ${ings.map(i => `
+                            <li>
+                                <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
+                                <span>${i.products?.name} (${i.amount || ''} ${i.unit || ''})</span>
+                            </li>`).join('')}
+                    </ul>
+                </div>
             </div>
+
             <button onclick="addSelectedToCart()" class="btn-add-to-cart">Dodaj do listy 🛒</button>
         </div>
     `;
@@ -232,46 +245,15 @@ window.saveRecipeData = async () => {
     refreshData();
 };
 
-window.addIngredientToRecipe = async () => {
-    const name = document.getElementById('ing-name').value;
-    if (!name) return;
+// ... wewnątrz funkcji addIngredientToRecipe ...
+const amountVal = document.getElementById('ing-amount').value;
 
-    // Jeśli to nowy przepis i jeszcze nic nie zapisaliśmy, stwórzmy "szkielet" w bazie
-    if (!currentEditingRecipeId) {
-        const { data: { user } } = await _supabase.auth.getUser();
-        const initialTitle = document.getElementById('edit-recipe-name').value || "Nowy Przepis (w trakcie)";
-        
-        const { data, error } = await _supabase.from('recipes').insert([{ 
-            title: initialTitle, 
-            user_id: user.id 
-        }]).select().single();
-        
-        if (error) {
-            console.error("Błąd tworzenia szkicu:", error);
-            return;
-        }
-        currentEditingRecipeId = data.id;
-    }
-
-    const productId = await getOrCreateProductId(name);
-    
-    // Dodajemy składnik do już istniejącego (lub właśnie stworzonego) ID przepisu
-    const { error: ingError } = await _supabase.from('recipe_ingredients').insert([{ 
-        recipe_id: currentEditingRecipeId, 
-        product_id: productId, 
-        amount: document.getElementById('ing-amount').value, 
-        unit: document.getElementById('ing-unit').value 
-    }]);
-
-    if (ingError) {
-        console.error("Błąd dodawania składnika:", ingError);
-    } else {
-        document.getElementById('ing-name').value = "";
-        document.getElementById('ing-amount').value = "";
-        document.getElementById('ing-unit').value = "";
-        loadEditorIngredients(currentEditingRecipeId);
-    }
-};
+const { error: ingError } = await _supabase.from('recipe_ingredients').insert([{ 
+    recipe_id: currentEditingRecipeId, 
+    product_id: productId, 
+    amount: String(amountVal), // <--- KLUCZ: Wymuszamy tekst
+    unit: document.getElementById('ing-unit').value 
+}]);
 
 window.addSelectedToCart = async () => {
     const { data: { user } } = await _supabase.auth.getUser();
@@ -338,6 +320,19 @@ window.clearAllShopping = async () => {
         await _supabase.from('shopping_list').delete().eq('user_id', user.id); 
         refreshData(); 
     } 
+};
+window.toggleCardSection = (id) => {
+    const el = document.getElementById(id);
+    const arrow = document.getElementById(id + '-arrow');
+    if (el) {
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+            if (arrow) arrow.innerText = '▼';
+        } else {
+            el.style.display = 'none';
+            if (arrow) arrow.innerText = '▶';
+        }
+    }
 };
 
 checkUser();
