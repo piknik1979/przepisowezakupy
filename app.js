@@ -4,7 +4,7 @@ const _supabase = createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
 let currentEditingRecipeId = null;
 let isSignUpMode = false;
 
-// --- 1. SYSTEM AUTH ---
+// --- 1. SYSTEM AUTORYZACJI ---
 async function checkUser() {
     try {
         const { data: { user }, error } = await _supabase.auth.getUser();
@@ -22,7 +22,9 @@ async function checkUser() {
             appContent.style.display = 'none';
         }
     } catch (err) {
-        document.getElementById('auth-container').style.display = 'flex';
+        if (document.getElementById('auth-container')) {
+            document.getElementById('auth-container').style.display = 'flex';
+        }
     }
 }
 
@@ -31,7 +33,6 @@ window.handleAuthSubmit = async (event) => {
     const btn = document.getElementById('btn-auth-submit');
     const email = document.getElementById('auth-email').value;
     const pass = document.getElementById('auth-password').value;
-
     btn.disabled = true;
     btn.innerText = "Przetwarzanie...";
 
@@ -67,6 +68,7 @@ window.toggleAuthMode = (isSignUp) => {
 };
 
 window.handleSignOut = async () => { await _supabase.auth.signOut(); location.reload(); };
+
 window.togglePasswordVisibility = (id) => {
     const el = document.getElementById(id);
     if (el) el.type = el.type === 'password' ? 'text' : 'password';
@@ -94,7 +96,7 @@ function renderShoppingList(list) {
 
 window.addItemManually = async () => {
     const name = document.getElementById('new-item-name').value;
-    const amountVal = document.getElementById('new-item-amount').value; 
+    const amountVal = document.getElementById('new-item-amount').value;
     if (!name) return;
     const productId = await getOrCreateProductId(name);
     const { data: { user } } = await _supabase.auth.getUser();
@@ -107,7 +109,7 @@ window.addItemManually = async () => {
     }]);
     
     document.getElementById('new-item-name').value = "";
-    document.getElementById('new-item-amount').value = ""; 
+    document.getElementById('new-item-amount').value = "";
     refreshData();
 };
 
@@ -123,9 +125,9 @@ async function getOrCreateProductId(name) {
 // --- 3. PRZEPISY ---
 function renderRecipesMenu(list) {
     document.getElementById('recipes-menu').innerHTML = list.map(r => `
-        <div class="recipe-item-row" style="display:flex; justify-content:space-between; margin-bottom:10px; background:white; padding:10px; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div class="recipe-item-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:10px; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             <button class="recipe-select-btn" style="flex:1; text-align:left; border:none; background:none; font-weight:bold; cursor:pointer;" onclick="displayRecipeCard('${r.id}')">📖 ${r.title}</button>
-            <button class="recipe-del-btn" style="border:none; background:none; cursor:pointer;" onclick="deleteFullRecipe('${r.id}')">🗑️</button>
+            <button class="recipe-del-btn" style="border:none; background:none; cursor:pointer; font-size:18px;" onclick="deleteFullRecipe('${r.id}')">🗑️</button>
         </div>
     `).join('');
 }
@@ -138,8 +140,7 @@ window.displayRecipeCard = async (id) => {
     document.getElementById('recipes-menu').style.display = 'none';
     card.style.display = 'block';
 
-    const descShow = Math.random() > 0.5 ? 'block' : 'none';
-    const ingsShow = Math.random() > 0.5 ? 'block' : 'none';
+    const descShow = 'block'; 
 
     card.innerHTML = `
         <div class="recipe-card-modern">
@@ -151,23 +152,25 @@ window.displayRecipeCard = async (id) => {
             <div class="card-section">
                 <div class="section-header" onclick="toggleCardSection('desc-content')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                     <h3>Sposób przygotowania</h3>
-                    <span id="desc-content-arrow">${descShow === 'block' ? '▼' : '▶'}</span>
+                    <span id="desc-content-arrow">▼</span>
                 </div>
                 <div id="desc-content" class="section-content" style="display:${descShow}; padding:10px; background:#f9f9f9; border-radius:10px; white-space: pre-wrap;">
                     ${r.instructions || 'Brak opisu.'}
                 </div>
             </div>
             <div class="card-section">
-                <div class="section-header" onclick="toggleCardSection('ings-content')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div class="section-header">
                     <h3>Składniki</h3>
-                    <span id="ings-content-arrow">${ingsShow === 'block' ? '▼' : '▶'}</span>
                 </div>
-                <div id="ings-content" class="section-content" style="display:${ingsShow};">
+                <div id="ings-content" class="section-content">
                     <ul class="modern-ing-list">
                         ${ings.map(i => `
-                            <li>
-                                <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
-                                <span>${i.products?.name} (${i.amount || ''} ${i.unit || ''})</span>
+                            <li style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #eee;">
+                                <div>
+                                    <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
+                                    <span>${i.products?.name} <strong>${i.amount || ''} ${i.unit || ''}</strong></span>
+                                </div>
+                                <button onclick="deleteIngFromRecipeGlobal('${i.id}', '${id}')" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:20px;">&times;</button>
                             </li>`).join('')}
                     </ul>
                 </div>
@@ -175,6 +178,13 @@ window.displayRecipeCard = async (id) => {
             <button onclick="addSelectedToCart()" class="btn-add-to-cart">Dodaj do listy 🛒</button>
         </div>
     `;
+};
+
+window.deleteIngFromRecipeGlobal = async (ingId, recipeId) => {
+    if(confirm("Usunąć ten składnik z przepisu?")) {
+        await _supabase.from('recipe_ingredients').delete().eq('id', ingId);
+        displayRecipeCard(recipeId); // Odśwież kartę
+    }
 };
 
 window.openRecipeEditor = async (id = null) => {
@@ -185,8 +195,7 @@ window.openRecipeEditor = async (id = null) => {
         'edit-recipe-bake': 'bake_time',
         'edit-recipe-servings': 'servings',
         'edit-recipe-kcal': 'kcal',
-        'edit-recipe-instructions': 'instructions',
-        'edit-recipe-url': 'url'
+        'edit-recipe-instructions': 'instructions'
     };
 
     if (id) {
@@ -212,11 +221,8 @@ async function loadEditorIngredients(rid) {
     const { data: ings } = await _supabase.from('recipe_ingredients').select('*, products(name)').eq('recipe_id', rid);
     document.getElementById('editor-ingredients-list').innerHTML = (ings || []).map(i => `
         <li style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
-            <label style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" checked>
-                <span><strong>${i.products?.name}</strong> (${i.amount || ''} ${i.unit || ''})</span>
-            </label>
-            <button onclick="deleteIngFromRecipe('${i.id}')" class="del-btn">&times;</button>
+            <span><strong>${i.products?.name}</strong> (${i.amount || ''} ${i.unit || ''})</span>
+            <button onclick="deleteIngFromRecipe('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-size:22px;">&times;</button>
         </li>`).join('');
 }
 
@@ -249,15 +255,12 @@ window.addIngredientToRecipe = async () => {
     if (!name) return;
 
     if (!currentEditingRecipeId) {
-        const { data: { user } } = await _supabase.auth.getUser();
-        const { data } = await _supabase.from('recipes').insert([{ 
-            title: document.getElementById('edit-recipe-name').value || "Nowy", 
-            user_id: user.id 
-        }]).select().single();
-        currentEditingRecipeId = data.id;
+        alert("Najpierw wpisz nazwę dania i kliknij Zapisz!");
+        return;
     }
 
     const productId = await getOrCreateProductId(name);
+    // Wymuszamy String dla amountVal, żeby baza przyjęła ułamki
     await _supabase.from('recipe_ingredients').insert([{ 
         recipe_id: currentEditingRecipeId, 
         product_id: productId, 
@@ -274,7 +277,10 @@ window.addSelectedToCart = async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     const sel = document.querySelectorAll('.ing-to-buy:checked');
     const items = Array.from(sel).map(cb => ({ 
-        product_id: cb.dataset.pid, amount: cb.dataset.amt, unit: cb.dataset.unt, user_id: user.id 
+        product_id: cb.dataset.pid, 
+        amount: String(cb.dataset.amt), // Tu też String
+        unit: cb.dataset.unt, 
+        user_id: user.id 
     }));
     if(items.length > 0) { 
         await _supabase.from('shopping_list').upsert(items, { onConflict: 'user_id, product_id' }); 
@@ -286,9 +292,12 @@ window.addSelectedToCart = async () => {
 
 window.updateAutocompletes = async () => {
     const { data: products } = await _supabase.from('products').select('name').limit(20);
-    document.getElementById('products-datalist').innerHTML = (products || []).map(p => `<option value="${p.name}">`).join('');
+    const dl = document.getElementById('products-datalist');
+    if (dl) dl.innerHTML = (products || []).map(p => `<option value="${p.name}">`).join('');
+    
     const units = ['g', 'kg', 'ml', 'l', 'szt', 'opak.', 'łyżka', 'łyżeczka', 'szklanka'];
-    document.getElementById('units-datalist').innerHTML = units.map(u => `<option value="${u}">`).join('');
+    const ul = document.getElementById('units-datalist');
+    if (ul) ul.innerHTML = units.map(u => `<option value="${u}">`).join('');
 };
 
 window.showView = (v) => {
@@ -302,7 +311,7 @@ window.closeRecipeCard = () => {
 };
 
 window.deleteFullRecipe = async (id) => { 
-    if(confirm("Usunąć przepis?")) { 
+    if(confirm("Usunąć cały przepis?")) { 
         await _supabase.from('recipes').delete().eq('id', id); 
         refreshData(); 
     } 
