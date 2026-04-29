@@ -140,42 +140,52 @@ window.displayRecipeCard = async (id) => {
     document.getElementById('recipes-menu').style.display = 'none';
     card.style.display = 'block';
 
-    const descShow = 'block'; 
-
     card.innerHTML = `
         <div class="recipe-card-modern">
             <div class="card-nav">
                 <button onclick="closeRecipeCard()" class="btn-back">← Powrót</button>
                 <button onclick="openRecipeEditor('${r.id}')" class="btn-edit-icon">✏️ Edytuj</button>
             </div>
+            
             <h2 class="card-title">${r.title}</h2>
+
+            <div class="recipe-info-strip" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; font-size: 0.85em; color: #444; background: #f4f4f4; padding: 10px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                ${r.prep_time ? `<span>⏱️ <b>Przyg:</b> ${r.prep_time}</span>` : ''}
+                ${r.bake_time ? `<span>🔥 <b>Piecz:</b> ${r.bake_time}</span>` : ''}
+                ${r.servings ? `<span>👥 <b>Porcje:</b> ${r.servings}</span>` : ''}
+                ${r.kcal ? `<span>⚖️ <b>kcal:</b> ${r.kcal}</span>` : ''}
+            </div>
+
+            <div class="card-section" style="margin-bottom: 20px;">
+                <div class="section-header">
+                    <h3 style="margin-bottom: 10px;">Składniki</h3>
+                </div>
+                <div id="ings-content" class="section-content">
+                    <ul class="modern-ing-list" style="list-style:none; padding:0;">
+                        ${ings.map(i => `
+                            <li style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
+                                <div>
+                                    <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
+                                    <span>${i.products?.name} <strong>${i.amount || ''} ${i.unit || ''}</strong></span>
+                                </div>
+                                <button onclick="deleteIngFromRecipeGlobal('${i.id}', '${id}')" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:20px; font-weight:bold;">&times;</button>
+                            </li>`).join('')}
+                    </ul>
+                    <button onclick="addSelectedToCart()" class="btn-add-to-cart" style="margin-top: 15px; width: 100%;">Dodaj wybrane do listy 🛒</button>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
             <div class="card-section">
                 <div class="section-header" onclick="toggleCardSection('desc-content')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                     <h3>Sposób przygotowania</h3>
                     <span id="desc-content-arrow">▼</span>
                 </div>
-                <div id="desc-content" class="section-content" style="display:${descShow}; padding:10px; background:#f9f9f9; border-radius:10px; white-space: pre-wrap;">
+                <div id="desc-content" class="section-content" style="display:block; padding:15px; background:#fdfdfd; border: 1px solid #eee; border-radius:10px; white-space: pre-wrap; line-height: 1.5;">
                     ${r.instructions || 'Brak opisu.'}
                 </div>
             </div>
-            <div class="card-section">
-                <div class="section-header">
-                    <h3>Składniki</h3>
-                </div>
-                <div id="ings-content" class="section-content">
-                    <ul class="modern-ing-list">
-                        ${ings.map(i => `
-                            <li style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #eee;">
-                                <div>
-                                    <input type="checkbox" class="ing-to-buy" data-pid="${i.product_id}" data-amt="${i.amount || ''}" data-unt="${i.unit || ''}" checked>
-                                    <span>${i.products?.name} <strong>${i.amount || ''} ${i.unit || ''}</strong></span>
-                                </div>
-                                <button onclick="deleteIngFromRecipeGlobal('${i.id}', '${id}')" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:20px;">&times;</button>
-                            </li>`).join('')}
-                    </ul>
-                </div>
-            </div>
-            <button onclick="addSelectedToCart()" class="btn-add-to-cart">Dodaj do listy 🛒</button>
         </div>
     `;
 };
@@ -183,7 +193,7 @@ window.displayRecipeCard = async (id) => {
 window.deleteIngFromRecipeGlobal = async (ingId, recipeId) => {
     if(confirm("Usunąć ten składnik z przepisu?")) {
         await _supabase.from('recipe_ingredients').delete().eq('id', ingId);
-        displayRecipeCard(recipeId); // Odśwież kartę
+        displayRecipeCard(recipeId);
     }
 };
 
@@ -195,7 +205,8 @@ window.openRecipeEditor = async (id = null) => {
         'edit-recipe-bake': 'bake_time',
         'edit-recipe-servings': 'servings',
         'edit-recipe-kcal': 'kcal',
-        'edit-recipe-instructions': 'instructions'
+        'edit-recipe-instructions': 'instructions',
+        'edit-recipe-url': 'url'
     };
 
     if (id) {
@@ -220,9 +231,9 @@ window.openRecipeEditor = async (id = null) => {
 async function loadEditorIngredients(rid) {
     const { data: ings } = await _supabase.from('recipe_ingredients').select('*, products(name)').eq('recipe_id', rid);
     document.getElementById('editor-ingredients-list').innerHTML = (ings || []).map(i => `
-        <li style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
+        <li style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid #eee;">
             <span><strong>${i.products?.name}</strong> (${i.amount || ''} ${i.unit || ''})</span>
-            <button onclick="deleteIngFromRecipe('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-size:22px;">&times;</button>
+            <button onclick="deleteIngFromRecipe('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-size:24px;">&times;</button>
         </li>`).join('');
 }
 
@@ -235,6 +246,7 @@ window.saveRecipeData = async () => {
         servings: document.getElementById('edit-recipe-servings').value,
         kcal: document.getElementById('edit-recipe-kcal').value,
         instructions: document.getElementById('edit-recipe-instructions').value,
+        url: document.getElementById('edit-recipe-url').value,
         user_id: user.id
     };
     if (currentEditingRecipeId) {
@@ -243,7 +255,7 @@ window.saveRecipeData = async () => {
         const { data } = await _supabase.from('recipes').insert([d]).select().single();
         if (data) currentEditingRecipeId = data.id;
     }
-    alert("Zapisano!");
+    alert("Zapisano dane przepisu!");
     refreshData();
 };
 
@@ -255,12 +267,11 @@ window.addIngredientToRecipe = async () => {
     if (!name) return;
 
     if (!currentEditingRecipeId) {
-        alert("Najpierw wpisz nazwę dania i kliknij Zapisz!");
+        alert("Zapisz najpierw nazwę przepisu!");
         return;
     }
 
     const productId = await getOrCreateProductId(name);
-    // Wymuszamy String dla amountVal, żeby baza przyjęła ułamki
     await _supabase.from('recipe_ingredients').insert([{ 
         recipe_id: currentEditingRecipeId, 
         product_id: productId, 
@@ -278,7 +289,7 @@ window.addSelectedToCart = async () => {
     const sel = document.querySelectorAll('.ing-to-buy:checked');
     const items = Array.from(sel).map(cb => ({ 
         product_id: cb.dataset.pid, 
-        amount: String(cb.dataset.amt), // Tu też String
+        amount: String(cb.dataset.amt), 
         unit: cb.dataset.unt, 
         user_id: user.id 
     }));
@@ -311,7 +322,7 @@ window.closeRecipeCard = () => {
 };
 
 window.deleteFullRecipe = async (id) => { 
-    if(confirm("Usunąć cały przepis?")) { 
+    if(confirm("Usunąć trwale ten przepis?")) { 
         await _supabase.from('recipes').delete().eq('id', id); 
         refreshData(); 
     } 
