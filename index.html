@@ -51,9 +51,8 @@
                     <h1>🛒 Moja Lista</h1>
                     <div class="quick-add">
                         <input type="text" id="new-item-name" list="products-datalist" placeholder="Produkt...">
-                        <input type="text" id="new-item-amount" placeholder="Ile" style="width: 50px;">
-                        <input type="text" id="new-item-unit" list="units-datalist" placeholder="Jedn."
-                            style="width: 70px;">
+                        <input type="text" id="new-item-amount" placeholder="Ile">
+                        <input type="text" id="new-item-unit" list="units-datalist" placeholder="Jedn.">
                         <button onclick="addItemManually()">Dodaj</button>
                     </div>
                 </header>
@@ -117,7 +116,17 @@
     </div>
 
     <datalist id="products-datalist"></datalist>
-    <datalist id="units-datalist"></datalist>
+    <datalist id="units-datalist">
+        <option value="szt."></option>
+        <option value="g"></option>
+        <option value="kg"></option>
+        <option value="ml"></option>
+        <option value="l"></option>
+        <option value="łyżka"></option>
+        <option value="łyżeczka"></option>
+        <option value="szczypta"></option>
+        <option value="opak."></option>
+    </datalist>
     <script src="app.js"></script>
 </body>
 

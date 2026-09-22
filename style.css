@@ -171,15 +171,47 @@ body {
 
 /* QUICK ADD & FORMS */
 .quick-add {
-    display: flex;
-    gap: 5px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 8px;
     margin-bottom: 15px;
 }
 
 .quick-add input {
-    padding: 10px;
+    width: 100%;
+    padding: 12px 10px;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border-radius: 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.quick-add button {
+    grid-column: 1 / -1;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.quick-add button:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+}
+
+@media (min-width: 600px) {
+    .quick-add {
+        grid-template-columns: 3fr 1fr 1fr auto;
+    }
+    
+    .quick-add button {
+        grid-column: auto;
+        padding: 0 20px;
+    }
 }
 
 .large-input,
