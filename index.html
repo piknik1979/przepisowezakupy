@@ -1,133 +1,155 @@
 <!DOCTYPE html>
 <html lang="pl">
-   
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Recipes Pro</title>
-    <script src="config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lista Zakupów i Przepisy</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
 </head>
-
 <body>
+
+    <!-- EKRAN LOGOWANIA / REJESTRACJI -->
     <div id="auth-container" class="auth-overlay">
-        <div class="auth-box">
+        <div class="auth-card">
             <h2 id="auth-title">Logowanie</h2>
-            <p id="auth-msg">Zaloguj się, aby zarządzać przepisami</p>
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)">
-                <input type="email" id="auth-email" name="email" autocomplete="username" placeholder="E-mail" required>
-                <div class="password-wrapper">
-                    <input type="password" id="auth-password" name="password" autocomplete="current-password"
-                        placeholder="Hasło" required>
-                    <button type="button" class="toggle-password"
-                        onclick="togglePasswordVisibility('auth-password')">👁️</button>
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="auth-email" required placeholder="twoj@email.com">
                 </div>
-                <div id="retype-wrapper" style="display: none;" class="password-wrapper">
-                    <input type="password" id="auth-retype" name="retype-password" autocomplete="new-password"
-                        placeholder="Powtórz hasło">
-                    <button type="button" class="toggle-password"
-                        onclick="togglePasswordVisibility('auth-retype')">👁️</button>
+                <div class="input-group">
+                    <label>Hasło</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="auth-password" required placeholder="••••••••">
+                        <button type="button" class="eye-btn" onclick="togglePasswordVisibility('auth-password')">👁️</button>
+                    </div>
                 </div>
-                <div class="auth-btns">
-                    <button type="submit" id="btn-auth-submit">Zaloguj się</button>
+                <div class="input-group" id="retype-wrapper" style="display: none;">
+                    <label>Powtórz hasło</label>
+                    <input type="password" id="auth-retype" placeholder="••••••••">
                 </div>
+                <button type="submit" id="btn-auth-submit" class="save-btn" style="width:100%; margin-top:10px;">Zaloguj się</button>
             </form>
-            <div class="auth-switch">
-                <p id="switch-area">Nie masz konta? <a href="#" onclick="toggleAuthMode(true)">Zarejestruj się</a></p>
+            <div id="switch-area" class="switch-auth">
+                Nie masz konta? <a href="#" onclick="toggleAuthMode(true)">Zarejestruj się</a>
             </div>
         </div>
     </div>
 
+    <!-- GŁÓWNA APLIKACJA -->
     <div id="app-content" style="display: none;">
-        <div id="user-bar">
-            <span id="user-email-display"></span>
+        <header class="app-header">
+            <span id="user-email-display">Użytkownik: ...</span>
             <button onclick="handleSignOut()" class="logout-btn">Wyloguj</button>
-        </div>
+        </header>
 
-        <div class="app-container">
+        <main class="container">
+            <!-- WIDOK GŁÓWNY -->
             <div id="view-main">
-                <header>
-                    <h1>🛒 Moja Lista</h1>
-                    <div class="quick-add">
-                        <input type="text" id="new-item-name" list="products-datalist" placeholder="Produkt...">
-                        <input type="text" id="new-item-amount" placeholder="Ile">
-                        <input type="text" id="new-item-unit" list="units-datalist" placeholder="Jedn.">
-                        <button onclick="addItemManually()">Dodaj</button>
-                    </div>
-                </header>
-
-                <main class="main-content">
-                    <section class="shopping-column">
+                <div class="grid-layout">
+                    
+                    <!-- SEKCJA LISTY ZAKUPÓW -->
+                    <section class="card">
                         <div class="column-header">
-                            <h2>Lista zakupów</h2>
+                            <h2>🛒 Lista zakupów</h2>
                             <div class="btn-group">
-                                <button class="clear-btn" onclick="clearBought()">Kupione</button>
-                                <button class="clear-btn danger" onclick="clearAllShopping()">Wszystko</button>
+                                <button class="action-btn-modern clean-bought" onclick="clearBought()">
+                                    <span class="icon">✨</span>
+                                    <span class="label">Kupione</span>
+                                </button>
+                                <button class="action-btn-modern clean-all" onclick="clearAllShopping()">
+                                    <span class="icon">🗑️</span>
+                                    <span class="label">Wszystko</span>
+                                </button>
                             </div>
                         </div>
-                        <ul id="shopping-list"></ul>
+
+                        <!-- Formularz dodawania produktu -->
+                        <div class="add-item-form">
+                            <input type="text" id="new-item-name" placeholder="Produkt..." list="products-datalist">
+                            <datalist id="products-datalist"></datalist>
+                            <input type="number" id="new-item-amount" placeholder="Ilość" style="width: 65px;">
+                            <input type="text" id="new-item-unit" placeholder="Jedn." style="width: 55px;">
+                            <button onclick="addItemManually()" class="add-btn">Dodaj</button>
+                        </div>
+
+                        <ul id="shopping-list" class="shopping-list">
+                            <!-- Tutaj generują się elementy listy -->
+                        </ul>
                     </section>
 
-                    <aside class="recipes-column">
-                        <div class="column-header">
-                            <h2>🍲 Przepisy</h2>
-                            <button onclick="openRecipeEditor()" class="add-recipe-btn">+ Nowy</button>
+                    <!-- SEKCJA PRZEPISÓW -->
+                    <section class="card">
+                        <h2>📖 Twoje Przepisy</h2>
+                        <button onclick="openRecipeEditor()" class="save-btn" style="width:100%; margin-bottom:15px;">+ Dodaj nowy przepis</button>
+                        
+                        <div id="recipes-menu">
+                            <!-- Lista przepisów -->
                         </div>
-                        <div id="recipes-menu"></div>
-                        <div id="active-recipe-card" style="display: none;"></div>
-                    </aside>
-                </main>
-            </div>
 
-            <div id="view-editor" style="display: none;">
-                <header class="editor-header">
-                    <button onclick="showView('main')" class="back-btn">⬅ Wróć</button>
-                    <h1 id="editor-header-title">Edytor</h1>
-                </header>
-                <div class="editor-container">
-                    <div class="form-section">
-                        <input type="text" id="edit-recipe-name" class="large-input" placeholder="Nazwa dania...">
-                        <div class="extra-info-grid">
-                            <input type="text" id="edit-recipe-prep" placeholder="Przyg.">
-                            <input type="text" id="edit-recipe-bake" placeholder="Piecz.">
-                            <input type="text" id="edit-recipe-servings" placeholder="Porcje">
-                            <input type="text" id="edit-recipe-kcal" placeholder="kcal">
+                        <!-- Karta wybranego przepisu -->
+                        <div id="active-recipe-card" style="display:none;">
+                            <!-- Treść generowana dynamicznie -->
                         </div>
-                        <textarea id="edit-recipe-instructions" class="large-textarea"
-                            placeholder="Instrukcja..."></textarea>
-                        <input type="text" id="edit-recipe-url" class="medium-input" placeholder="Link (opcjonalnie)">
-                        <button onclick="saveRecipeData()" class="save-btn">Zapisz ✅</button>
-                    </div>
+                    </section>
 
-                    <div class="editor-ing-box">
-                        <h3>Składniki w przepisie</h3>
-                        <div class="ingredient-form">
-                            <input type="text" id="ing-name" list="products-datalist" placeholder="Co?">
-                            <input type="text" id="ing-amount" placeholder="Ile?">
-                            <input type="text" id="ing-unit" list="units-datalist" placeholder="Jedn.">
-                            <button onclick="addIngredientToRecipe()">+</button>
-                        </div>
-                        <ul id="editor-ingredients-list"></ul>
-                    </div>
                 </div>
             </div>
-        </div>
+
+            <!-- WIDOK EDYTORA PRZEPISU -->
+            <div id="view-editor" style="display: none;" class="card">
+                <button onclick="showView('main')" class="back-btn">← Powrót</button>
+                <h2 id="editor-header-title">Edytuj przepis</h2>
+                
+                <div class="input-group">
+                    <label>Tytuł przepisu</label>
+                    <input type="text" id="edit-recipe-name">
+                </div>
+
+                <div class="row-inputs" style="display: flex; gap: 8px;">
+                    <div class="input-group" style="flex:1;">
+                        <label>Przygotowanie</label>
+                        <input type="text" id="edit-recipe-prep" placeholder="np. 30 min">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label>Pieczenie</label>
+                        <input type="text" id="edit-recipe-bake" placeholder="np. 45 min">
+                    </div>
+                </div>
+
+                <div class="row-inputs" style="display: flex; gap: 8px;">
+                    <div class="input-group" style="flex:1;">
+                        <label>Porcje</label>
+                        <input type="text" id="edit-recipe-servings" placeholder="np. 4">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label>Kalorie</label>
+                        <input type="text" id="edit-recipe-kcal" placeholder="np. 550">
+                    </div>
+                </div>
+
+                <h3>Składniki</h3>
+                <div class="add-item-form">
+                    <input type="text" id="ing-name" placeholder="Składnik..." list="products-datalist">
+                    <input type="text" id="ing-amount" placeholder="Ilość" style="width: 65px;">
+                    <input type="text" id="ing-unit" placeholder="Jedn." style="width: 55px;">
+                    <button onclick="addIngredientToRecipe()" class="add-btn">Dodaj</button>
+                </div>
+                <ul id="editor-ingredients-list" style="list-style:none; padding:0; margin-bottom:20px;"></ul>
+
+                <div class="input-group">
+                    <label>Sposób przygotowania</label>
+                    <textarea id="edit-recipe-instructions" rows="6" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;"></textarea>
+                </div>
+
+                <button onclick="saveRecipeData()" class="save-btn" style="width:100%; margin-top:15px;">Zapisz przepis</button>
+            </div>
+        </main>
     </div>
 
-    <datalist id="products-datalist"></datalist>
-    <datalist id="units-datalist">
-        <option value="szt."></option>
-        <option value="g"></option>
-        <option value="kg"></option>
-        <option value="ml"></option>
-        <option value="l"></option>
-        <option value="łyżka"></option>
-        <option value="łyżeczka"></option>
-        <option value="szczypta"></option>
-        <option value="opak."></option>
-    </datalist>
     <script src="app.js"></script>
 </body>
-
 </html>
