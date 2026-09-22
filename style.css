@@ -108,14 +108,14 @@ body {
 .add-item-form {
     display: flex;
     gap: 4px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     width: 100%;
 }
 
 .add-item-form input {
     flex: 1;
-    min-width: 0; /* Kluczowe dla elastyczności flexbox na małych ekranach */
-    padding: 8px;
+    min-width: 0;
+    padding: 6px 8px;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     font-size: 13px;
@@ -125,7 +125,7 @@ body {
     background-color: #2563eb;
     color: white;
     border: none;
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
@@ -148,7 +148,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 6px 0;
     border-bottom: 1px solid #f1f5f9;
     width: 100%;
 }
@@ -157,7 +157,7 @@ body {
     cursor: pointer;
     flex: 1;
     word-break: break-word;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .item-text.bought {
@@ -169,14 +169,14 @@ body {
     background: none;
     border: none;
     color: #ef4444;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     cursor: pointer;
     padding: 0 5px;
 }
 
 .app-header {
     background: #ffffff;
-    padding: 10px 15px;
+    padding: 8px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -188,11 +188,11 @@ body {
     background: #fee2e2;
     color: #dc2626;
     border: none;
-    padding: 6px 10px;
+    padding: 4px 8px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 /* Overlay logowania */
@@ -220,24 +220,24 @@ body {
 }
 
 .input-group {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     width: 100%;
 }
 
 .input-group label {
     display: block;
-    margin-bottom: 4px;
-    font-size: 12px;
+    margin-bottom: 2px;
+    font-size: 11px;
     font-weight: 600;
     color: #475569;
 }
 
 .input-group input {
     width: 100%;
-    padding: 8px;
+    padding: 6px 8px;
     border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13px;
     box-sizing: border-box;
 }
 
@@ -259,12 +259,12 @@ body {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .switch-auth {
     text-align: center;
-    margin-top: 12px;
+    margin-top: 10px;
     font-size: 12px;
     color: #64748b;
 }
@@ -278,11 +278,23 @@ body {
 .back-btn, .edit-btn {
     background: #f1f5f9;
     border: none;
-    padding: 6px 10px;
+    padding: 4px 8px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
     color: #334155;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+/* Zmniejszone nagłówki w widoku edytora przepisu */
+#view-editor h2 {
+    font-size: 1.15rem;
+    margin-top: 4px;
     margin-bottom: 8px;
-    font-size: 12px;
+}
+
+#view-editor h3 {
+    font-size: 1rem;
+    margin: 8px 0 4px 0;
 }
