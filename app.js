@@ -445,10 +445,10 @@ window.updateAutocompletes = async () => {
       .map((p) => `<option value="${p.name}">`)
       .join("");
 };
-window.quickSelectProduct = (name, amount, unit) => {
+window.quickSelectProduct = async (name, amount, unit) => {
   document.getElementById("new-item-name").value = name;
   document.getElementById("new-item-amount").value = amount;
   document.getElementById("new-item-unit").value = unit;
+  await addItemManually();
 };
-
 checkUser();
