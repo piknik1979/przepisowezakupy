@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lista Zakupów i Przepisy</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.0.3">
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
@@ -67,12 +67,23 @@
                             </div>
                         </div>
 
-                        <!-- Formularz dodawania produktu -->
+                        <!-- PASEK SZYBKICH IKON (NOWOŚĆ) -->
+                        <div class="quick-icons-bar">
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Chleb', '1', 'szt.')">🍞 Chleb</button>
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Banany', '1', 'kg')">🍌 Banany</button>
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Mleko', '1', 'l')">🥛 Mleko</button>
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Jajka', '10', 'szt.')">🥚 Jajka</button>
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Pomidory', '0.5', 'kg')">🍅 Pomidory</button>
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Ser', '1', 'opak.')">🧀 Ser</button>
+                            <button type="button" class="quick-icon-btn" onclick="quickSelectProduct('Pietruszka', '1', 'szt.')">🌿 Pietruszka</button>
+                        </div>
+
+                        <!-- Formularz dodawania produktu (Większe pola) -->
                         <div class="add-item-form">
                             <input type="text" id="new-item-name" placeholder="Produkt..." list="products-datalist">
                             <datalist id="products-datalist"></datalist>
-                            <input type="number" id="new-item-amount" placeholder="Ilość" style="width: 65px;">
-                            <input type="text" id="new-item-unit" placeholder="Jedn." style="width: 55px;">
+                            <input type="number" id="new-item-amount" placeholder="Ilość" style="width: 75px;">
+                            <input type="text" id="new-item-unit" placeholder="Jedn." style="width: 75px;">
                             <button onclick="addItemManually()" class="add-btn">Dodaj</button>
                         </div>
 
@@ -134,8 +145,8 @@
                 <h3>Składniki</h3>
                 <div class="add-item-form">
                     <input type="text" id="ing-name" placeholder="Składnik..." list="products-datalist">
-                    <input type="text" id="ing-amount" placeholder="Ilość" style="width: 65px;">
-                    <input type="text" id="ing-unit" placeholder="Jedn." style="width: 55px;">
+                    <input type="text" id="ing-amount" placeholder="Ilość" style="width: 75px;">
+                    <input type="text" id="ing-unit" placeholder="Jedn." style="width: 75px;">
                     <button onclick="addIngredientToRecipe()" class="add-btn">Dodaj</button>
                 </div>
                 <ul id="editor-ingredients-list" style="list-style:none; padding:0; margin-bottom:20px;"></ul>
